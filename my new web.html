@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Teacher & Student Assistant System</title>
+<style>
+    body{
+        margin:0;
+        font-family:Arial, sans-serif;
+        background: linear-gradient(135deg,#0f172a,#1e3a8a,#0ea5e9);
+        color:white;
+        min-height:100vh;
+        display:flex;
+        flex-direction:column;
+    }
+
+    header{
+        text-align:center;
+        padding:15px;
+        font-size:24px;
+        font-weight:bold;
+        background: rgba(0,0,0,0.2);
+    }
+
+    /* HOME */
+    .center-box{
+        flex:1;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:40px;
+        flex-wrap:wrap;
+    }
+
+    .big-btn{
+        width:240px;
+        height:240px;
+        border-radius:30px;
+        border:none;
+        font-size:22px;
+        font-weight:bold;
+        cursor:pointer;
+        box-shadow:0 20px 40px rgba(0,0,0,0.5);
+        transition:0.4s;
+        color:white;
+    }
+
+    .big-btn:hover{
+        transform:scale(1.08);
+    }
+
+    .teacher{ background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+    .student{ background: linear-gradient(135deg,#10b981,#059669); }
+
+    /* PANEL LAYOUT */
+    .panel{
+        display:none;
+        height:83vh;
+        width:100%;
+        flex-direction:column;
+    }
+
+    .topbar{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:12px 20px;
+        background:rgba(0,0,0,0.35);
+        backdrop-filter:blur(10px);
+    }
+
+    .back-btn{
+        background:#ef4444;
+        border:none;
+        padding:8px 15px;
+        border-radius:10px;
+        color:white;
+        cursor:pointer;
+        font-weight:bold;
+    }
+
+    .content{
+        display:flex;
+        flex:1;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sidebar{
+        width:230px;
+        background:rgba(255,255,255,0.06);
+        backdrop-filter:blur(10px);
+        padding:15px;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+    }
+
+    .side-item{
+        padding:12px;
+        border-radius:12px;
+        cursor:pointer;
+        background:rgba(255,255,255,0.05);
+        transition:0.3s;
+    }
+
+    .side-item:hover, .side-item.active{
+        background:rgba(255,255,255,0.2);
+        transform:translateX(5px);
+    }
+
+    /* MAIN AREA */
+    .main{
+        flex:1;
+        padding:20px;
+        overflow-y: auto;
+    }
+
+    .dashboard-view{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+        gap:15px;
+    }
+
+    .card{
+        background:rgba(255,255,255,0.1);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:18px;
+        padding:20px;
+        text-align:center;
+        cursor:pointer;
+        transition:0.3s;
+    }
+
+    .card:hover{
+        transform:translateY(-6px);
+        background:rgba(255,255,255,0.2);
+    }
+
+    /* TABS */
+    .tab-content{
+        display: none;
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .tab-content.active{ display: block; }
+
+    textarea, input[type="text"], input[type="password"], select, input[type="file"] {
+        width: 95%;
+        padding: 10px;
+        margin-top: 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #000;
+        background: white;
+    }
+
+    button{
+        background:#facc15;
+        font-weight:bold;
+        cursor:pointer;
+        padding:10px 20px;
+        border-radius:10px;
+        border:none;
+        margin-top:10px;
+        color: #000;
+    }
+
+    button:hover{ background: #eab308; }
+
+    /* OVERLAYS */
+    .login-overlay {
+        display: none;
+        position: fixed;
+        top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.85);
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+    }
+
+    .login-box{
+        background: #1e293b;
+        padding: 35px;
+        border-radius: 20px;
+        text-align: center;
+        width: 320px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    /* CHAT PART UI */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 350px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 12px;
+        padding: 10px;
+        overflow-y: auto;
+        margin-top: 10px;
+    }
+    .chat-msg {
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 80%;
+    }
+    .msg-user { background: #2563eb; align-self: flex-end; color: white; }
+    .msg-ai { background: #374151; align-self: flex-start; color: white; }
+
+    /* IMAGE GENERATOR MOCK */
+    .ai-photo-box {
+        width: 100%;
+        height: 250px;
+        background: #374151;
+        border-radius: 12px;
+        margin-top: 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    /* GOOGLE EXCEL SHEET MOCK */
+    .excel-container {
+        width: 100%;
+        height: 400px;
+        background: white;
+        color: black;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 15px;
+    }
+
+    .post-box {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        border-left: 5px solid #facc15;
+    }
+
+    footer{
+        text-align:center;
+        padding:12px;
+        font-size:12px;
+        background:rgba(0,0,0,0.4);
+        margin-top: auto;
+    }
+</style>
+</head>
+<body>
+
+<header>🎓 Multi-Teacher & Student Management Hub</header>
+
+<div class="center-box" id="home">
+    <button class="big-btn teacher" onclick="openTeacherOverlay()">👨‍🏫 TEACHER HUB<br><span style="font-size:12px;font-weight:normal;">Create Class / Login</span></button>
+    <button class="big-btn student" onclick="openStudentPanel()">🎓 STUDENT HUB<br><span style="font-size:12px;font-weight:normal;">Access Lessons</span></button>
+</div>
+
+<div class="login-overlay" id="teacherOverlay">
+    <div class="login-box">
+        <h3 id="authTitle">Setup New Teacher Account</h3>
+        <input type="text" id="tAuthName" placeholder="Teacher Name (e.g., Mr. Nethum)">
+        <input type="password" id="tAuthPwd" placeholder="Create Student Access Password">
+        <br><br>
+        <button onclick="registerTeacher()">🚀 Create & Enter Class</button>
+        <br>
+        <p style="font-size: 11px; color:#94a3b8; margin: 10px 0;">OR Login to existing account below</p>
+        <select id="existingTeachers" onchange="loadExistingTeacherPassword()"></select>
+        <button onclick="loginTeacher()" style="background:#10b981; color:white;">🔓 Login</button>
+        <button onclick="closeOverlay('teacherOverlay')" style="background:#ef4444; color:white; margin-top:10px; width:100%;">Cancel</button>
+    </div>
+</div>
+
+<div class="login-overlay" id="studentOverlay">
+    <div class="login-box">
+        <h3>🔐 Unlock Teacher's Classroom</h3>
+        <label>1. Select Your Teacher:</label>
+        <select id="studentTeacherSelect"></select>
+        <br><br>
+        <label>2. Enter Password given by Teacher:</label>
+        <input type="password" id="studentInputPwd" placeholder="Enter Password">
+        <br><br>
+        <button onclick="verifyStudentAccess()">🔓 Access Classroom</button>
+        <button onclick="closeOverlay('studentOverlay')" style="background:#ef4444; color:white; margin-left:10px;">Cancel</button>
+    </div>
+</div>
+
+
+<div class="panel" id="teacherPanel">
+    <div class="topbar">
+        <h3>👨‍🏫 Teacher Dashboard: <span id="activeTeacherName" style="color:#facc15;"></span></h3>
+        <button class="back-btn" onclick="goHome()">⬅ Logout / Home</button>
+    </div>
+    <div class="content">
+        <div class="sidebar">
+            <div class="side-item active" onclick="switchTab('teacher', 't-dashboard')">🏠 Dashboard</div>
+            <div class="side-item" onclick="switchTab('teacher', 't-notes')">📝 Upload Notes</div>
+            <div class="side-item" onclick="switchTab('teacher', 't-homework')">📚 Assign Homework</div>
+            <div class="side-item" onclick="switchTab('teacher', 't-ai')">🤖 AI Chat Part</div>
+            <div class="side-item" onclick="switchTab('teacher', 't-gemini')">🖼 Gemini Photo</div>
+            <div class="side-item" onclick="switchTab('teacher', 't-excel')">📊 Google Excel Sheet</div>
+        </div>
+        <div class="main">
+            
+            <div id="t-dashboard" class="tab-content active">
+                <div class="dashboard-view">
+                    <div class="card" onclick="switchTab('teacher', 't-notes')"><h3>Upload Notes</h3><p>Share lessons & images</p></div>
+                    <div class="card" onclick="switchTab('teacher', 't-homework')"><h3>Create Homework</h3><p>Assign new tasks</p></div>
+                    <div class="card" onclick="switchTab('teacher', 't-ai')"><h3>AI Chat Bot</h3><p>Ask help for papers</p></div>
+                    <div class="card" onclick="switchTab('teacher', 't-excel')"><h3>Excel Sheets</h3><p>Manage Marks & Data</p></div>
+                </div>
+                <div style="margin-top:20px; background:rgba(255,255,255,0.1); padding:15px; border-radius:10px;">
+                    <strong>ℹ️ Your Student Password is: </strong> <span id="currentTeacherSharedPwd" style="color:#facc15; font-size:18px;"></span>
+                    <p style="font-size:12px;margin:5px 0 0 0;color:#cbd5e1;">Give this password to your student group to see your uploads.</p>
+                </div>
+            </div>
+
+            <div id="t-notes" class="tab-content">
+                <h2>📝 Upload Lesson Notes</h2>
+                <textarea id="noteInput" rows="5" placeholder="Type lesson notes here..."></textarea><br><br>
+                <label>🖼 Attach Picture from PC:</label><br>
+                <input type="file" id="noteImage" accept="image/*"><br><br>
+                <button onclick="saveNote()">Publish to Students</button>
+            </div>
+
+            <div id="t-homework" class="tab-content">
+                <h2>📚 Assign Homework</h2>
+                <textarea id="homeworkInput" rows="5" placeholder="Enter questions..."></textarea><br><br>
+                <label>🖼 Attach Question Sheet Image:</label><br>
+                <input type="file" id="hwImage" accept="image/*"><br><br>
+                <button onclick="saveHomework()">Publish Homework</button>
+            </div>
+
+            <div id="t-ai" class="tab-content">
+                <h2>🤖 Teacher AI Chat Room (Gemini/GPT Chat Part)</h2>
+                <div class="chat-container" id="t-chat-box">
+                    <div class="chat-msg msg-ai">Hello Teacher! I am your AI. How can I help you draft lessons or quizzes today?</div>
+                </div>
+                <input type="text" id="t-chat-input" placeholder="Type a message to AI..." style="width:78%;">
+                <button onclick="sendMessage('teacher')" style="width:15%; margin-left:10px;">Send ➡️</button>
+            </div>
+
+            <div id="t-gemini" class="tab-content">
+                <h2>🖼 Gemini Image Creator</h2>
+                <p>Type anything you want to generate as a diagram or photo for your class:</p>
+                <input type="text" id="t-prompt" placeholder="e.g., Solar system high resolution diagram...">
+                <button onclick="generatePhoto('teacher')">✨ Generate Photo via Gemini</button>
+                <div class="ai-photo-box" id="t-photo-output">Image preview will display here</div>
+            </div>
+
+            <div id="t-excel" class="tab-content">
+                <h2>📊 Google Sheet / Quick Excel Tool</h2>
+                <p>Manage student marks, attendance, and instant calculations below:</p>
+                <div class="excel-container">
+                    <iframe src="https://docs.google.com/spreadsheets/d/1_unreGfLgSgN0Vp6pG_v66mR06u9LpW_VwKjRPhM5jM/htmlview" style="width:100%; height:100%; border:none;"></iframe>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="panel" id="studentPanel">
+    <div class="topbar">
+        <h3>🎓 Student Panel: Connected to <span id="activeStudentTeacherName" style="color:#facc15;"></span></h3>
+        <button class="back-btn" onclick="goHome()">⬅ Exit Classroom</button>
+    </div>
+    <div class="content">
+        <div class="sidebar">
+            <div class="side-item active" onclick="switchTab('student', 's-dashboard')">🏠 Dashboard</div>
+            <div class="side-item" onclick="switchTab('student', 's-notes'); loadNotesForStudent();">📘 View Notes</div>
+            <div class="side-item" onclick="switchTab('student', 's-homework'); loadHomeworkForStudent();">📖 Homework</div>
+            <div class="side-item" onclick="switchTab('student', 's-ai')">🤖 AI Chat Part</div>
+            <div class="side-item" onclick="switchTab('student', 's-gemini')">🖼 Gemini Photo</div>
+            <div class="side-item" onclick="switchTab('student', 's-excel')">📊 Google Excel Sheet</div>
+        </div>
+        <div class="main">
+            
+            <div id="s-dashboard" class="tab-content active">
+                <div class="dashboard-view">
+                    <div class="card" onclick="switchTab('student', 's-notes'); loadNotesForStudent();"><h3>📘 Lesson Notes</h3><p>Read customized teacher logs</p></div>
+                    <div class="card" onclick="switchTab('student', 's-homework'); loadHomeworkForStudent();"><h3>📖 Check Homework</h3><p>Solve assignments</p></div>
+                    <div class="card" onclick="switchTab('student', 's-ai')"><h3>🤖 Student AI Chat</h3><p>Solve problems immediately</p></div>
+                    <div class="card" onclick="switchTab('student', 's-excel')"><h3>📊 Google Sheet</h3><p>View results sheet</p></div>
+                </div>
+            </div>
+
+            <div id="s-notes" class="tab-content">
+                <h2>📘 Lesson Notes From Teacher</h2>
+                <div id="sNotesDisplay">No notes published by this teacher.</div>
+            </div>
+
+            <div id="s-homework" class="tab-content">
+                <h2>📖 Homework Assignments</h2>
+                <div id="sHomeworkDisplay">No homework assigned by this teacher.</div>
+            </div>
+
+            <div id="s-ai" class="tab-content">
+                <h2>🤖 Student AI Assistant (Chat Part)</h2>
+                <div class="chat-container" id="s-chat-box">
+                    <div class="chat-msg msg-ai">Hi! Ask me any doubt about your homework or lessons. I am ready!</div>
+                </div>
+                <input type="text" id="s-chat-input" placeholder="Ask AI anything..." style="width:78%;">
+                <button onclick="sendMessage('student')" style="width:15%; margin-left:10px;">Ask ➡️</button>
+            </div>
+
+            <div id="s-gemini" class="tab-content">
+                <h2>🖼 Gemini Student Image Generator</h2>
+                <input type="text" id="s-prompt" placeholder="Describe the image you need for assignment...">
+                <button onclick="generatePhoto('student')">✨ Create Image</button>
+                <div class="ai-photo-box" id="s-photo-output">Image preview will display here</div>
+            </div>
+
+            <div id="s-excel" class="tab-content">
+                <h2>📊 Marks & Excel Spreadsheet Viewer</h2>
+                <div class="excel-container">
+                    <iframe src="https://docs.google.com/spreadsheets/d/1_unreGfLgSgN0Vp6pG_v66mR06u9LpW_VwKjRPhM5jM/htmlview" style="width:100%; height:100%; border:none;"></iframe>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<footer>
+Created by H.NETHUM RASHMINA | 📧 nethumrashmina1212@gmail.com | 📞 0753903279
+</footer>
+
+<script>
+// --- CORE DATA REGISTRATION (DATABASE ENGINE) ---
+let currentTeacher = "";
+
+function getDatabase() {
+    return JSON.parse(localStorage.getItem('multiHubDB')) || {};
+}
+
+function saveDatabase(db) {
+    localStorage.setItem('multiHubDB', JSON.stringify(db));
+}
+
+// --- OVERLAY LOGIC ---
+function openTeacherOverlay() {
+    document.getElementById('teacherOverlay').style.display = 'flex';
+    populateTeacherDropdowns();
+}
+
+function openStudentPanel() {
+    let db = getDatabase();
+    if(Object.keys(db).length === 0) {
+        alert("No teachers registered yet in the system!");
+        return;
+    }
+    document.getElementById('studentOverlay').style.display = 'flex';
+    populateTeacherDropdowns();
+}
+
+function closeOverlay(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+function populateTeacherDropdowns() {
+    let db = getDatabase();
+    let existSelect = document.getElementById('existingTeachers');
+    let studSelect = document.getElementById('studentTeacherSelect');
+    
+    existSelect.innerHTML = "<option value=''>-- Select Existing Account --</option>";
+    studSelect.innerHTML = "";
+
+    for(let teacherName in db) {
+        existSelect.innerHTML += `<option value="${teacherName}">${teacherName}</option>`;
+        studSelect.innerHTML += `<option value="${teacherName}">${teacherName}</option>`;
+    }
+}
+
+// --- LOGIN / REGISTER LOGIC ---
+function registerTeacher() {
+    let name = document.getElementById('tAuthName').value.trim();
+    let pwd = document.getElementById('tAuthPwd').value.trim();
+
+    if(name === "" || pwd === "") return alert("Please fill both Teacher Name and Student Password!");
+
+    let db = getDatabase();
+    if(!db[name]) {
+        db[name] = { password: pwd, note: null, homework: null };
+        saveDatabase(db);
+    }
+    
+    launchTeacherPanel(name);
+}
+
+function loginTeacher() {
+    let name = document.getElementById('existingTeachers').value;
+    if(!name) return alert("Please select an account!");
+    launchTeacherPanel(name);
+}
+
+function launchTeacherPanel(name) {
+    currentTeacher = name;
+    let db = getDatabase();
+    
+    document.getElementById('teacherOverlay').style.display = 'none';
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('teacherPanel').style.display = 'flex';
+    
+    document.getElementById('activeTeacherName').innerText = name;
+    document.getElementById('currentTeacherSharedPwd').innerText = db[name].password;
+    
+    switchTab('teacher', 't-dashboard');
+}
+
+function verifyStudentAccess() {
+    let selectedTeacher = document.getElementById('studentTeacherSelect').value;
+    let enteredPwd = document.getElementById('studentInputPwd').value;
+    
+    let db = getDatabase();
+    if(db[selectedTeacher] && db[selectedTeacher].password === enteredPwd) {
+        currentTeacher = selectedTeacher; // Lock into this database node
+        document.getElementById('studentOverlay').style.display = 'none';
+        document.getElementById('home').style.display = 'none';
+        document.getElementById('studentPanel').style.display = 'flex';
+        document.getElementById('activeStudentTeacherName').innerText = selectedTeacher;
+        switchTab('student', 's-dashboard');
+    } else {
+        alert("❌ Incorrect Password for this teacher! Try again.");
+    }
+}
+
+function goHome() {
+    document.getElementById('home').style.display = 'flex';
+    document.getElementById('teacherPanel').style.display = 'none';
+    document.getElementById('studentPanel').style.display = 'none';
+    currentTeacher = "";
+    // Reset inputs
+    document.getElementById('tAuthName').value = "";
+    document.getElementById('tAuthPwd').value = "";
+    document.getElementById('studentInputPwd').value = "";
+}
+
+// --- TAB SWITCHER ---
+function switchTab(panelType, tabId) {
+    let tabs = document.querySelectorAll(`#${panelType}Panel .tab-content`);
+    tabs.forEach(t => t.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+}
+
+// --- DATA READ/WRITE LOGIC ---
+function saveNote() {
+    let text = document.getElementById('noteInput').value;
+    let file = document.getElementById('noteImage').files[0];
+    
+    if(text.trim() === "") return alert("Please write a lesson note.");
+
+    let db = getDatabase();
+    if(file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            db[currentTeacher].note = { text: text, image: e.target.result };
+            saveDatabase(db);
+            alert("✅ Notes updated successfully!");
+        };
+        reader.readAsDataURL(file);
+    } else {
+        db[currentTeacher].note = { text: text, image: null };
+        saveDatabase(db);
+        alert("✅ Notes updated successfully!");
+    }
+}
+
+function loadNotesForStudent() {
+    let db = getDatabase();
+    let data = db[currentTeacher].note;
+    let box = document.getElementById('sNotesDisplay');
+    
+    if(!data) { box.innerHTML = "No notes uploaded yet by this teacher."; return; }
+    
+    let html = `<div class="post-box"><p style="white-space: pre-wrap;">${data.text}</p>`;
+    if(data.image) html += `<img src="${data.image}" style="max-width:100%; border-radius:10px; margin-top:10px;">`;
+    html += `</div>`;
+    box.innerHTML = html;
+}
+
+function saveHomework() {
+    let text = document.getElementById('homeworkInput').value;
+    let file = document.getElementById('hwImage').files[0];
+    
+    if(text.trim() === "") return alert("Please fill homework content.");
+
+    let db = getDatabase();
+    if(file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            db[currentTeacher].homework = { text: text, image: e.target.result };
+            saveDatabase(db);
+            alert("✅ Homework assigned successfully!");
+        };
+        reader.readAsDataURL(file);
+    } else {
+        db[currentTeacher].homework = { text: text, image: null };
+        saveDatabase(db);
+        alert("✅ Homework assigned successfully!");
+    }
+}
+
+function loadHomeworkForStudent() {
+    let db = getDatabase();
+    let data = db[currentTeacher].homework;
+    let box = document.getElementById('sHomeworkDisplay');
+    
+    if(!data) { box.innerHTML = "No homework assigned yet."; return; }
+    
+    let html = `<div class="post-box"><p style="white-space: pre-wrap;">${data.text}</p>`;
+    if(data.image) html += `<img src="${data.image}" style="max-width:100%; border-radius:10px; margin-top:10px;">`;
+    html += `</div>`;
+    box.innerHTML = html;
+}
+
+// --- ADVANCED AI CHAT LOGIC ---
+function sendMessage(role) {
+    let inputId = role === 'teacher' ? 't-chat-input' : 's-chat-input';
+    let boxId = role === 'teacher' ? 't-chat-box' : 's-chat-box';
+    
+    let userText = document.getElementById(inputId).value;
+    if(userText.trim() === "") return;
+    
+    let chatBox = document.getElementById(boxId);
+    chatBox.innerHTML += `<div class="chat-msg msg-user">${userText}</div>`;
+    document.getElementById(inputId).value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    setTimeout(() => {
+        let aiResponses = [
+            "I've analyzed your prompt. Here is the perfect structure you requested.",
+            "That's correct! According to standard lesson blueprints, this is a highly recommended approach.",
+            "Can you provide more specific constraints so I can solve it accurately?",
+            "Here is the detailed summary to note down in your study sheet."
+        ];
+        let randomRes = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+        chatBox.innerHTML += `<div class="chat-msg msg-ai">🤖 <b>AI Part:</b> ${randomRes}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 1000);
+}
+
+// --- GEMINI PHOTO CREATING LOGIC (MOCK GENERATOR) ---
+function generatePhoto(role) {
+    let promptId = role === 'teacher' ? 't-prompt' : 's-prompt';
+    let outputId = role === 'teacher' ? 't-photo-output' : 's-photo-output';
+    let promptText = document.getElementById(promptId).value;
+    
+    if(promptText.trim() === "") return alert("Please write what image you want Gemini to create!");
+    
+    let outBox = document.getElementById(outputId);
+    outBox.innerHTML = "✨ Gemini Photo AI is generating your design image...";
+    
+    setTimeout(() => {
+        // High quality educational images array
+        let mockImages = [
+            "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=60", // space
+            "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?w=500&auto=format&fit=crop&q=60", // tech graph
+            "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&auto=format&fit=crop&q=60", // chemistry lab
+            "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=500&auto=format&fit=crop&q=60"  // mathematics
+        ];
+        let chosenImg = mockImages[Math.floor(Math.random() * mockImages.length)];
+        outBox.innerHTML = `<img src="${chosenImg}" style="width:100%; height:100%; object-fit:cover;" title="${promptText}">`;
+    }, 1500);
+}
+</script>
+</body>
+</html>
